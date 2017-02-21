@@ -52,6 +52,7 @@ class GoogleTrackAdminInline(admin.TabularInline):
 
 @admin.register(Track)
 class TrackAdmin(AppModelAdmin):
+    search_fields = ['name', 'artist', 'album',]
     list_display = ('name', 'artist',)
     inlines = (SpotifyTrackAdminInline, GoogleTrackAdminInline,)
 
