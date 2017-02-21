@@ -1,0 +1,26 @@
+version: '2'
+services:
+  gspotsyncer:
+    build: .
+    depends_on:
+      - postgres
+      - memcached
+    links:
+      - postgres
+      - memcached
+    ports:
+     - "80:8000"
+    volumes:
+     - ./src:/var/gspotsyncer
+    restart: always
+  postgres:
+    image: postgres
+    environment:
+      - VIRTUAL_HOST=postgres
+      - VIRTUAL_PORT=5432
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+  memcached:
+      image: memcached
+      environment:
+        - VIRTUAL_HOST=memcached

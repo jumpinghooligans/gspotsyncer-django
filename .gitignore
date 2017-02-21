@@ -1,0 +1,4 @@
+.DS_Store
+docker-compose.dev.yml
+
+postgres_data/*

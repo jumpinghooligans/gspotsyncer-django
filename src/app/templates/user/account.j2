@@ -1,0 +1,170 @@
+{% extends "layout.j2" %}
+{% block content %}
+<div class="row">
+    <div class="col s12">
+        <h5>{{ user.username }}'s account</h5>
+    </div>
+</div>
+
+<div id="account-summary" class="row">
+    <div class="col s12 m6">
+        <strong>Latest Playlists</strong>
+        {% if playlists %}
+            <div class="collection">
+            {% for playlist in playlists %}
+                <div class="collection-item">
+                    <div class="row">
+                        <div class="col s4 l3">
+                        {% if playlist.random_album_art %}
+                            <img class="responsive-img album-art" src="{{ playlist.random_album_art }}" />
+                        {% endif %}
+                        </div>
+                        <div class="col s8 l9">
+                            <strong><a href="/playlists/{{ playlist._id }}">{{ playlist.name }}</a></strong>
+                            <br />
+                            <span class="grey-text">master</span> {{ playlist.master }}
+                            <br />
+                            <span class="grey-text">refreshed</span> {{ playlist.last_refreshed if playlist.last_refreshed else 'never' }}
+                            <br />
+                            <span class="grey-text">published</span> {{ playlist.last_published if playlist.last_published else 'never' }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p class="grey-text"><em>No playlists yet...</em></p>
+        {% endif %}
+        <p>
+            <a class="waves-effect waves-light btn deep-orange lighten-2" href="/playlists/create">Create a Playlist</a>
+        </p>
+    </div>
+
+    <div class="col s12 m6">
+        <strong>Account Info</strong>
+        <p>
+            Account page for {{ user.username }}
+        </p>
+        <p>
+            <a class="waves-effect waves-light btn deep-orange lighten-2 modal-trigger" href="#account-modify">Modify Account</a>
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col s12">
+        <strong>Service Credentials</strong>
+        <div class="divider"></div>
+    </div>
+    <div class="col s12 m6">
+        <p class="grey-text">
+            Google Play Music
+        </p>
+        <p>
+        {% if user.googleprofile %}
+            <p><i class="material-icons green-text">done</i>&nbsp;&nbsp;&nbsp;Google Play Music connected</p>
+            <a class="btn orange lighten-3 grey-text text-lighten-4 waves-effect waves-light" href="/account/google/disconnect/">Clear Google Credentials</a>
+        {% else %}
+            <a class="btn orange waves-effect waves-light modal-trigger" href="#update-google">Connect Google Music</a>
+        {% endif %}
+        </p>
+    </div>
+    <div class="col s12 m6">
+        <p class="grey-text">
+            Spotify
+        </p>
+        <p>
+        {% if user.spotifyprofile %}
+            <p><i class="material-icons green-text">done</i>&nbsp;&nbsp;&nbsp;Spotify connected</p>
+            <a class="btn green lighten-3 grey-text text-lighten-4 waves-effect waves-light" href="/account/spotify/disconnect/">Clear Spotify Credentials</a>
+        {% else %}
+            <a class="btn green waves-effect waves-light" href="/account/spotify/connect/">Connect Spotify</a>
+        {% endif %}
+        </p>
+    </div>
+</div>
+
+
+<div id="account-modify" class="modal">
+    <div class="modal-content">
+        <div class="row">
+            <div class="col s12">
+                <h4>Account Settings</h4>
+                <div class="divider"></div>
+            </div>
+        </div>
+        <form method="POST" action="/account/modify/">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col s12 m6 input-field">
+                    {{ user_form.first_name.label_tag() }}
+                    {{ user_form.first_name }}
+                </div>
+
+                <div class="col s12 m6 input-field">
+                    {{ user_form.last_name.label_tag() }}
+                    {{ user_form.last_name }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col s12 input-field">
+                    {{ user_form.username.label_tag() }}
+                    {{ user_form.username }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col s12 input-field">
+                    {{ user_form.email.label_tag() }}
+                    {{ user_form.email }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col s12 input-field">
+                    <input type="submit" class="right btn deep-orange lighten-2" value="Save" />
+                    <a href="#!" class="modal-action modal-close waves-effect waves-orange btn-flat">Close</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="update-google" class="modal">
+    <div class="modal-content">
+        <div class="row">
+            <div class="col s12">
+                <h4>Update Google Credentials</h4>
+                <div class="divider"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col s12">
+                <form method="POST" action="/account/google/connect/">
+                    {% csrf_token %}
+                    {{ google_form.management_form }}
+                    {% for form in google_form %}
+                        <div class="row">
+                            <div class="col s12 input-field">
+                                {{ form.username.label_tag(label_suffix = '') }}
+                                {{ form.username }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12 input-field">
+                                {{ form.password.label_tag(label_suffix = '') }}
+                                {{ form.password }}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <input type="submit" class="right btn deep-orange lighten-2" value="Save" />
+                    <a href="#!" class="modal-action modal-close waves-effect waves-orange btn-flat">Close</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

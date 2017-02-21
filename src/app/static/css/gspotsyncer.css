@@ -1,0 +1,64 @@
+html,body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.preloader.row {
+    margin-top: 20%;
+}
+
+a {
+    color: #ff6e40;
+}
+
+footer a {
+    color: #ff8a65;
+}
+
+#create-playlist .form {
+    margin-left: 45px;
+    padding-top: 1rem;
+}
+
+.album-art {
+    box-shadow:0 2px 5px 0 #888
+}
+
+.login-form .btn {
+    width: 100%;
+}
+
+.brand-logo > .gspot {
+    font-weight: 500;
+    /*font-variant: small-caps;*/
+}
+
+.brand-logo > .syncer {
+    font-weight: 200;
+    /*font-variant: small-caps;*/
+    /*font-size: 0.5em;*/
+}
+
+.track-list {
+    width: 100%;
+}
+
+.track-list .table-image {
+    min-width: 60px;
+    max-width: 100px;
+    text-align: center;
+}
+
+.img-dec {
+    margin: 1rem 1rem 0 1rem;
+}

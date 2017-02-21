@@ -1,0 +1,23 @@
+{% extends "layout.j2" %}
+{% block content %}
+
+<div class="row">
+	<div class="col s12">
+		<h4>Create a Playlist</h4>
+	</div>
+</div>
+
+<form method="POST" name="create" class="create-playlist">
+
+{% csrf_token %}
+
+<div class="row">
+	<div class="input-field col s12">
+
+	</div>
+</div>
+
+</form>
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+{% endblock %}
