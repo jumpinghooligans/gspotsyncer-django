@@ -23,10 +23,18 @@ class Profile(AppModel):
     def refresh_external_playlists(self, refresh_tracks = False):
 
         # Google Music
-        self.user.googleprofile.refresh_external_playlists(refresh_tracks)
+        try:
+            self.user.googleprofile.refresh_external_playlists(refresh_tracks)
+
+        except GoogleProfile.DoesNotExist:
+            pass
 
         # Spotify
-        self.user.spotifyprofile.refresh_external_playlists(refresh_tracks)
+        try:
+            self.user.spotifyprofile.refresh_external_playlists(refresh_tracks)
+
+        except SpotifyProfile.DoesNotExist:
+            pass
 
 # On User create, create a blank profile
 @receiver(signals.post_save, sender=User)

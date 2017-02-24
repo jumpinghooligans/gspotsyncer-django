@@ -8,11 +8,46 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Track(AppModel):
-    name = models.CharField(max_length=255)
-    artist = models.CharField(max_length=1000, null=True)
+    name = models.CharField(max_length=500)
+    artist = models.CharField(max_length=500, null=True)
     album = models.CharField(max_length=500, null=True)
 
     album_image = models.CharField(max_length=1000, null=True)
+
+    # 'discovering' a track is a two part process
+    #  - check our local tracks for an exact match
+    #  - using the service API, search for the best match
+    def discover(self):
+        matching_tracks = Track.objects.filter(
+            name = self.name,
+            artist = self.artist,
+            album = self.album
+        ).exclude(
+            pk = self.pk
+        ).distinct()
+
+        logger.error(matching_tracks)
+
+        for matching_track in matching_tracks:
+
+            # if this track has spotify and we don't, attach it
+            if hasattr(matching_track, 'spotifytrack') and not hasattr(self, 'spotifytrack'):
+                self.spotifytrack = matching_track.spotifytrack
+
+            # if this track has google and we don't, attach it
+            if hasattr(matching_track, 'googletrack') and not hasattr(self, 'googletrack'):
+                self.googletrack = matching_track.googletrack
+
+            # save the updates
+            self.save()
+
+            # todo: handle other links :/
+            matching_track.delete()
+
+            # nothing else to do
+            return True
+
+        return False
 
     class Meta:
         ordering = ['tracklink__order',]
@@ -38,9 +73,6 @@ class SpotifyTrack(AppModel):
 
     # if there is a user id, we should use that, manuel override
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
-
-    # if it has a user, its an override
-    # user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     # easy lookup to see if we already have the track
     spotify_id = models.CharField(max_length=255, unique=True)

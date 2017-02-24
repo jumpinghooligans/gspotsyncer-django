@@ -2,25 +2,38 @@ version: '2'
 services:
   gspotsyncer:
     build: .
-    depends_on:
-      - postgres
-      - memcached
-    links:
-      - postgres
-      - memcached
-    ports:
-     - "80:8000"
+    command: /var/gspotsyncer/run_gspotsyncer.sh
     volumes:
      - ./src:/var/gspotsyncer
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    links:
+      - postgres
+      - redis
+      - rabbitmq
+    ports:
+     - "80:8000"
     restart: always
+  worker:
+    build: .
+    command: /var/gspotsyncer/run_worker.sh
+    volumes:
+     - ./src:/var/gspotsyncer
+    links:
+      - postgres
+      - redis
+      - rabbitmq
+    depends_on:
+      - rabbitmq
   postgres:
     image: postgres
-    environment:
-      - VIRTUAL_HOST=postgres
-      - VIRTUAL_PORT=5432
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
-  memcached:
-      image: memcached
-      environment:
-        - VIRTUAL_HOST=memcached
+  redis:
+    image: redis
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "15672:15672"

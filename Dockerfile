@@ -15,6 +15,9 @@ RUN pip install -r /tmp/pip.txt
 RUN echo "America/New_York" > /etc/timezone
 RUN dpkg-reconfigure -f noninteractive tzdata
 
+# Add an unprivileged user for celery's worker
+RUN adduser --disabled-password --gecos '' worker
+
 # Start server
 WORKDIR /var/gspotsyncer/
 EXPOSE 8000

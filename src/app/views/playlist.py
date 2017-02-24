@@ -14,7 +14,7 @@ def create(request):
     user = request.user
     
     # make sure our playlist data is up to date
-    # user.profile.refresh_external_playlists(True)
+    user.profile.refresh_external_playlists(True)
 
     # playlists registered with spotify
     spotify_playlists = user.playlist_set.filter(service='sp')
