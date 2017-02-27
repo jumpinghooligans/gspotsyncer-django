@@ -14,13 +14,14 @@ from app.models.spotify import SpotifyApi
 from app.models.playlist import GooglePlaylist, SpotifyPlaylist
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('consolelog')
 
 class Profile(AppModel):
     # link to User model
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def refresh_external_playlists(self, refresh_tracks = False):
+        logger.info('Profile refresh_external_playlists')
 
         # Google Music
         try:
@@ -53,6 +54,9 @@ class GoogleProfile(AppModel):
     password = models.CharField(max_length=255)
 
     def refresh_external_playlists(self, refresh_tracks = False):
+
+        logger.info('GoogleProfile refresh_external_playlists')
+
         api = GoogleApi(self.user)
 
         external_playlists = api.get_full_playlists()
@@ -112,6 +116,9 @@ class SpotifyProfile(AppModel):
     spotify_user = fields.JSONField(null=True)
 
     def refresh_external_playlists(self, refresh_tracks = False):
+
+        logger.info('SpotifyProfile refresh_external_playlists')
+
         api = SpotifyApi(self.user)
 
         external_playlists = api.get_playlists()
@@ -195,7 +202,7 @@ class SpotifyProfile(AppModel):
         if refresh_response.status_code == requests.codes.ok:
             credential_data = refresh_response.json()
 
-            logger.error(credential_data)
+            logger.info(credential_data)
 
             # update our credentials
             self.token_type = credential_data.get('token_type')

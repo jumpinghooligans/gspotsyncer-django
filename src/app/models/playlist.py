@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres import fields
+from django.conf import settings
 
 from app.models.core import AppModel
 from app.models.user import User
@@ -11,14 +12,9 @@ from app.models.google import GoogleApi
 from app.models.spotify import SpotifyApi
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('consolelog')
 
 class Playlist(AppModel):
-    SERVICES = (
-        ('sp', 'Spotify'),
-        ('gm', 'Google Music'),
-        ('yt', 'YouTube'),
-    )
 
     # User can have many Playlists
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -29,7 +25,7 @@ class Playlist(AppModel):
     # where does this playlist belong
     service = models.CharField(
         max_length=2,
-        choices=SERVICES
+        choices=settings.SERVICES
     )
     # how to get more data
     service_id = models.CharField(max_length=255)
@@ -41,9 +37,6 @@ class Playlist(AppModel):
 
     # track links
     tracks = models.ManyToManyField('Track', through=TrackLink)
-
-    # playlist links!
-    link = models.ManyToManyField('self', through=PlaylistLink, symmetrical=False)
 
     proxy_class = models.CharField(max_length=255)
 
@@ -101,16 +94,21 @@ class GooglePlaylist(Playlist):
         self.owner_id = playlist_data.get('ownerName')
         self.raw = playlist_data
 
-    def get_tracks(self):
+    def get_tracks():
+        return self.tracks.all()
+
+    def get_raw_tracks(self):
         # pull out the tracks dict
         return self.raw.get('tracks', [])
 
     # create or update 
     def refresh_tracks(self):
 
+        logger.info('GooglePlaylist refresh_tracks triggered')
+
         # google music playlists have the tracks stored right
         # on the playlist
-        tracks = self.get_tracks()
+        tracks = self.get_raw_tracks()
         
         # blow away the existing track links
         self.tracks.clear()
@@ -133,6 +131,7 @@ class GooglePlaylist(Playlist):
             try:
                 # this track exists
                 google_track = GoogleTrack.objects.get(nid=google_track.nid)
+                logger.info('GoogleTrack exists')
 
                 # pull out the base track
                 base_track = google_track.track
@@ -143,11 +142,14 @@ class GooglePlaylist(Playlist):
                 # this track doesn't exist, we need to create it
                 # (base track first)
                 base_track = google_track.generate_base_track()
+                base_track.added_by = self.user
                 base_track.save()
 
                 # associate with our new base track
                 google_track.track = base_track
                 google_track.save()
+
+                logger.info('GoogleTrack created')
 
             # Create a track link
             track_link = TrackLink(
@@ -186,9 +188,15 @@ class SpotifyPlaylist(Playlist):
 
     # create or update 
     def refresh_tracks(self):
+
+        logger.info('SpotifyPlaylist refresh_tracks triggered')
+
         api = SpotifyApi(self.user)
 
         tracks = api.get_playlist_tracks(self.owner_id, self.service_id)
+
+        if not tracks:
+            return False
         
         # blow away the existing track links
         self.tracks.clear()
@@ -211,6 +219,7 @@ class SpotifyPlaylist(Playlist):
             try:
                 # this track exists
                 spotify_track = SpotifyTrack.objects.get(spotify_id=spotify_track.spotify_id)
+                logger.info('SpotifyTrack exists')
 
                 # pull out the base track
                 base_track = spotify_track.track
@@ -221,11 +230,14 @@ class SpotifyPlaylist(Playlist):
                 # this track doesn't exist, we need to create it
                 # (base track first)
                 base_track = spotify_track.generate_base_track()
+                base_track.added_by = self.user
                 base_track.save()
 
                 # associate with our new base track
                 spotify_track.track = base_track
                 spotify_track.save()
+
+                logger.info('SpotifyTrack created')
 
             # Create a track link
             track_link = TrackLink(

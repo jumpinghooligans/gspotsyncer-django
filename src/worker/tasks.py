@@ -7,24 +7,31 @@ from django.db.models import signals
 
 from app.models.track import Track
 
-@shared_task
-def test(param):
-    return 'The test task executed with argument "%s" ' % param
-
+import logging
+logger = logging.getLogger('consolelog')
 
 # When a new track is created, trigger an async track to discover
 # it's service tracks
 @receiver(signals.post_save, sender='app.Track')
 def trigger_discover_track(sender, instance, created, **kwargs):
-    # if created:
-	discover_track.delay(instance.pk)
 
-# Actual task to run
-@shared_task
+    if created and instance.added_by:
+
+        discover_track.delay(instance.pk)
+
+# Actual task to run (100 per minute)
+# rate_limit='100/m'
+@shared_task(rate_limit='50/m')
 def discover_track(track_id):
 
-	track = Track.objects.get(pk=track_id)
+    try:
+        track = Track.objects.get(pk=track_id)
 
-	result = track.discover()
+    except Track.DoesNotExist:
+        return 'Track to discover has been deleted (probably merged)'
 
-	return 'discoverr track ' + str(track_id)
+    logger.info('Discover track ' + track.name + ' (' + str(track.id) + ')')
+
+    result = track.discover()
+
+    return 'Discover result: ' + str(result)

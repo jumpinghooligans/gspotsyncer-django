@@ -33,8 +33,11 @@ urlpatterns = [
     url(r'^account/spotify/return/$', user.spotify_return),
     url(r'^account/spotify/disconnect/$', user.spotify_disconnect),
 
+    # Playlist List
+    url(r'^playlists/$', playlist.index),
+
     # Playlist Create
-    url(r'^playlists/create', playlist.create),
+    url(r'^playlists/create/$', playlist.create),
 
     url(r'^test/$', core.test)
 ]

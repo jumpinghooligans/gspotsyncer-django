@@ -15,7 +15,7 @@ from app.models.spotify import SpotifyApi
 from django.http import HttpResponse
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('consolelog')
 
 #
 # ROUTES
@@ -81,6 +81,13 @@ def modify(request):
 
     return redirect('/account')
 
+# Refresh the user's playlists
+@login_required
+def refresh_playlists(request):
+
+    # reach out to the services and refresh the playlists
+    request.user.profile.refresh_external_playlists()
+
 
 # Currently just responds to the google credentials
 # form submit on the account page
@@ -104,7 +111,8 @@ def google_connect(request):
             google = GoogleApi(request.user)
 
             # make sure the user/pass validates
-            valid = google.init()
+            # False means, don't use rate limiting re-attempts
+            valid = google.init(False)
 
             if valid:
                 # All good

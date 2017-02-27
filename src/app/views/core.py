@@ -9,15 +9,18 @@ from app.models.track import Track
 from worker import tasks
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('consolelog')
 
 def index(request):
     return render(request, 'core/index.j2')
 
 def test(request):
-	track = Track.objects.get(pk=610)
+	# track = Track.objects.get(pk=1160)
+
+	playlist = request.user.playlist_set.all()[0]
+	logger.info(playlist.tracks.all())
 
 	# track.name = 'asdf'
-	track.discover()
+	# track.discover()
 
-	return HttpResponse(track.name)
+	return HttpResponse('hi')

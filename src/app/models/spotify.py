@@ -3,7 +3,7 @@ import requests
 from django.db import models
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('consolelog')
 
 class SpotifyApi(models.Model):
 
@@ -22,15 +22,9 @@ class SpotifyApi(models.Model):
 	def get_me(self):
 
 		# pull updated data from Spotify
-		res = self.request('get',
+		return self.request('get',
 			url='https://api.spotify.com/v1/me'
 		)
-
-		# return the data if we got a response
-		if res:
-			return res.json()
-
-		return False
 
 	def get_playlists(self):
 		res = self.request('get',
@@ -39,10 +33,9 @@ class SpotifyApi(models.Model):
 
 		# return the items property
 		if res:
-			res = res.json()
 			return res.get('items', [])
 
-		return False
+		return []
 
 	def get_playlist_tracks(self, owner_id, playlist_id):
 		res = self.request('get',
@@ -50,10 +43,34 @@ class SpotifyApi(models.Model):
 		)
 
 		if res:
-			res = res.json()
 			return res.get('tracks', {}).get('items', [])
 
-		return False
+		return []
+
+
+	def search_songs(self, query):
+		logger.info('Searching for Spotify song: ' + query)
+
+		search_results = self.search(query, 'track')
+
+		if not search_results:
+			return []
+
+		search_results = search_results.get('tracks', {})
+		search_results = search_results.get('items', [])
+
+		return search_results
+
+	def search(self, query, result_type):
+		params = {
+			'q' : query,
+			'type' : result_type
+		}
+
+		return self.request('get',
+			url='https://api.spotify.com/v1/search',
+			params=params
+		)
 
 	# A generic request function for making API calls
 	# 
@@ -90,20 +107,28 @@ class SpotifyApi(models.Model):
 				# update the kwargs
 				kwargs['headers'] = { 'Authorization' : self.profile.token_type + ' ' + self.profile.access_token }
 
-				logger.error('refresh access token passed')
-
 				# try this request again
 				return self.request(verb, **kwargs)
 			else:
-				logger.error('refresh failed')
+				logger.info('refresh failed')
 				# we tried to refresh but failed, there's probably
 				# some real issue, return the original request
 				self.profile.disconnect()
-				return res
+
+				try:
+					return res.json()
+
+				except ValueError:
+					return False
 		else:
 			# request is not a 401 - pass on through
 			self.refresh_attempted = False
-			return res
+
+			try:
+				return res.json()
+
+			except ValueError:
+				return False
 
 	# don't create a table n' shit
 	class Meta:

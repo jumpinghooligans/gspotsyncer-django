@@ -4,7 +4,7 @@ services:
     build: .
     command: /var/gspotsyncer/run_gspotsyncer.sh
     volumes:
-     - ./src:/var/gspotsyncer
+      - ./src:/var/gspotsyncer
     depends_on:
       - postgres
       - redis
@@ -20,7 +20,8 @@ services:
     build: .
     command: /var/gspotsyncer/run_worker.sh
     volumes:
-     - ./src:/var/gspotsyncer
+      - ./src:/var/gspotsyncer
+    user: worker
     links:
       - postgres
       - redis

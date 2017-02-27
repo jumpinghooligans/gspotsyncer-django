@@ -128,6 +128,22 @@ AUTH_PASSWORD_VALIDATORS = [
     # },
 ]
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'consolelog': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
@@ -151,6 +167,13 @@ STATIC_URL = '/static/'
 # User Authentication
 LOGIN_URL = '/account/login/'
 LOGIN_REDIRECT_URL = '/account/'
+
+
+SERVICES = (
+    ('sp', 'Spotify'),
+    ('gm', 'Google Music'),
+    # ('yt', 'YouTube'),
+)
 
 # gspotsyncer specific
 SPOTIFY_CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
