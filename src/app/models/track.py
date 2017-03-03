@@ -3,6 +3,7 @@ import re
 from django.db import models, IntegrityError
 from django.contrib.postgres import fields
 from django.conf import settings
+from django.core import serializers
 
 from app.models.core import AppModel
 from app.models.user import User
@@ -48,7 +49,8 @@ class Track(AppModel):
 
             for service in settings.SERVICES:
 
-                found_match = (found_match and self.discover_service(service[0]))
+                service_match = self.discover_service(service[0])
+                found_match = (found_match and service_match)
 
         return found_match
 
@@ -74,16 +76,24 @@ class Track(AppModel):
         return False
 
     # This will search the given services
-    def discover_service(self, service):
+    def discover_service(self, service, rediscover_existing = False):
         logger.info('Discover service on ' + service)
 
         api = False
 
         if service == 'gm':
+            if not rediscover_existing and self.googletrack_set.count() > 0:
+                logger.info('Track already has a matching GoogleTracks, skipping GM')
+                return True
+
             api = GoogleApi(self.added_by)
             service_track = GoogleTrack()
 
         elif service == 'sp':
+            if not rediscover_existing and self.spotifytrack_set.count() > 0:
+                logger.info('Track already has a matching SpotifyTrack, skipping SP')
+                return True
+
             api = SpotifyApi(self.added_by)
             service_track = SpotifyTrack()
 
@@ -306,6 +316,15 @@ class Track(AppModel):
 
         return matching_tracks
 
+    def serialize(self):
+        return {
+            'name' : self.name,
+            'artist' : self.artist,
+            'album' : self.album,
+            'album_image' : self.album_image,
+            'added_by' : self.added_by.username,
+        }
+
     class Meta:
         pass
         # This is causing duplicates
@@ -321,6 +340,10 @@ class TrackLink(AppModel):
 
     order = models.PositiveIntegerField()
     status = models.CharField(max_length=255)
+
+    # google uses entry id's rather than a
+    # playlist id / track id combo
+    entry_id = models.CharField(max_length=500, null=True)
 
     class Meta:
         ordering = ['order',]

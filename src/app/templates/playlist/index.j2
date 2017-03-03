@@ -1,0 +1,95 @@
+{% extends "layout.j2" %}
+{% block content %}
+
+<div class="row">
+    <div class="col s12">
+        <h5>Your Playlist Links</h5>
+    </div>
+</div>
+
+<div id="playlist-links">
+
+    <div class="row">
+        <div v-for="playlist_link in playlist_links">
+            <playlist-link
+                :playlist_link=playlist_link
+            ></playlist-link>
+        </div>
+    </div>
+
+</div>
+
+
+{# Playlist Link Form Template #}
+<script type="text/x-template" id="playlist-link">
+
+    <div class="playlist-link">
+
+        <div class="col s12 m6">
+            
+            <div class="card">
+                <div class="card-image" v-if="playlist_link.random_album_art">
+                    <img class="responsive-img" :src="playlist_link.random_album_art" />
+                </div>
+                <div class="card-content">
+
+                    <div class="row">
+                        <div class="col s12 l6">
+                            <strong class="grey-text">Destination Playlist</strong>
+                            <br />
+                            ${ playlist_link.destination.name }
+                        </div>
+                        <div class="col s12 l6">
+                            <strong class="grey-text">Source Playlists</strong>
+                            <br />
+                            <div v-for="source in playlist_link.sources">
+                                ${ source.name }
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card-action">
+                    <a :href="'/playlists/' + playlist_link.pk + '/modify'" class="right">Modify</a>
+                    <a :href="'/playlists/' + playlist_link.pk">View</a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</script>
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script type="text/javascript">
+
+
+Vue.component('playlist-link', {
+    template: '#playlist-link',
+
+    props: [
+        'playlist_link',
+    ],
+
+    data: function() {
+        return {
+        }
+    },
+
+    delimiters: ['${', '}']
+})
+
+var app = new Vue({
+    el: '#playlist-links',
+
+    data: {
+        playlist_links: {{ playlist_links|safe }},
+    },
+
+    delimiters: ['${', '}']
+})
+
+</script>
+{% endblock %}

@@ -1,8 +1,7 @@
 from django.contrib import admin
 
 from .models.user import Profile, GoogleProfile, SpotifyProfile
-from .models.playlist import Playlist
-from .models.playlist_link import PlaylistLink
+from .models.playlist import Playlist, PlaylistLink
 from .models.track import Track, TrackLink, SpotifyTrack, GoogleTrack
 
 import logging
@@ -49,21 +48,41 @@ class SpotifyProfileAdmin(AppModelAdmin):
 class PlaylistAdmin(AppModelAdmin):
     list_display = ('name', 'user', 'service',)
     readonly_fields = ('proxy_class',)
-    actions = ['refresh_tracks']
+    search_fields = ['name', 'service',]
+    actions = ['refresh_tracks',]
 
     # refresh tracks
     def refresh_tracks(self, request, queryset):
         logger.info('PlaylistAdmin refresh_tracks')
 
         for playlist in queryset:
-            playlist.refresh_tracks()
+            playlist.refresh_tracks(True)
 
     refresh_tracks.short_description = 'Refresh playlist tracks'
 
 @admin.register(PlaylistLink)
 class PlaylistLinkAdmin(AppModelAdmin):
-    list_display = ('id', 'user', 'source', 'destination',)
+    list_display = ('id', 'user', 'destination',)
+    search_fields = ['user', 'destination',]
+    actions = ['build_draft', 'publish_draft',]
 
+    # build new draft track links
+    def build_draft(self, request, queryset):
+        logger.info('PlaylistLinkAdmin build_draft')
+
+        for playlist_link in queryset:
+            playlist_link.build_draft()
+
+    build_draft.short_description = 'Build Draft Track Links'
+
+    # publish draft tracks
+    def publish_draft(self, request, queryset):
+        logger.info('PlaylistLinkAdmin publish_draft')
+
+        for playlist_link in queryset:
+            playlist_link.publish_draft()
+
+    publish_draft.short_description = 'Publish Draft Track Links'
 
 # Show service tracks on the track
 class SpotifyTrackAdminInline(admin.TabularInline):
@@ -86,7 +105,7 @@ class TrackAdmin(AppModelAdmin):
         logger.info('TrackAdmin rediscover')
 
         for track in queryset:
-            logger.info('rediscover with ' + str(track.pk))
+
             track.discover()
 
     rediscover.short_description = 'Rediscover track'

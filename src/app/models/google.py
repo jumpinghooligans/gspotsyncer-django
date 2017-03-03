@@ -84,6 +84,33 @@ class GoogleApi(models.Model):
 
         return playlists
 
+
+    def playlist_remove(self, delete_nids):
+
+        api = self.init()
+
+        if api:
+            result = api.remove_entries_from_playlist(delete_nids)
+
+            logger.info('Google Playlist Remove result: ' + str(result))
+
+            return result
+
+        return False
+
+    def playlist_add(self, playlist_id, insert_ids):
+
+        api = self.init()
+
+        if api:
+            result = api.add_songs_to_playlist(playlist_id, insert_ids)
+
+            logger.info('Google Playlist Add result: ' + str(result))
+
+            return result
+
+        return False
+
     def search_songs(self, query):
         logger.info('Searching Google Music for song: ' + query)
 

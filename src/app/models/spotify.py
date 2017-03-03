@@ -1,4 +1,4 @@
-import requests
+import requests, json
 
 from django.db import models
 
@@ -47,6 +47,50 @@ class SpotifyApi(models.Model):
 
 		return []
 
+
+	def playlist_remove(self, owner_id, playlist_id, delete_uris):
+		logger.info('Removing ' + str(delete_uris) + ' from ' + playlist_id)
+
+		uris = []
+		for delete_uri in delete_uris:
+			uris.append({
+				'uri' : delete_uri
+			})
+
+		data = {
+			'tracks' : uris
+		}
+
+		res = self.request('delete',
+			url='https://api.spotify.com/v1/users/' + owner_id +'/playlists/' + playlist_id + '/tracks',
+			headers={ 'Content-Type' : 'application/json' },
+			data=json.dumps(data)
+		)
+
+		if res:
+			logger.info('Spotify playlist remove result: ' + str(res))
+			return True
+
+		return False
+
+	def playlist_add(self, owner_id, playlist_id, insert_ids):
+		logger.info('Adding ' + str(insert_ids) + ' from ' + playlist_id)
+
+		data = {
+			'uris' : insert_ids
+		}
+
+		res = self.request('post',
+			url='https://api.spotify.com/v1/users/' + owner_id +'/playlists/' + playlist_id + '/tracks',
+			headers={ 'Content-Type' : 'application/json' },
+			data=json.dumps(data)
+		)
+
+		if res:
+			logger.info('Spotify playlist add result: ' + str(res))
+			return True
+
+		return False
 
 	def search_songs(self, query):
 		logger.info('Searching for Spotify song: ' + query)

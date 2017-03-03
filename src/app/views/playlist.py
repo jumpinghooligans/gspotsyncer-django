@@ -8,8 +8,7 @@ from django.contrib.auth.decorators import login_required
 from app.models.spotify import SpotifyApi
 from app.models.google import GoogleApi
 
-from app.models.playlist import Playlist
-from app.models.playlist_link import PlaylistLink
+from app.models.playlist import Playlist, PlaylistLink
 
 import logging, json
 logger = logging.getLogger('consolelog')
@@ -20,12 +19,23 @@ def index(request):
     user = request.user
 
     # Get the playlist links linked to this user
-    parent_playlist_links = user.playlistlink_set.all().distinct('destination')
+    playlist_links = request.user.playlistlink_set.all();
 
-    for link in parent_playlist_links:
-        logger.info(link.sources())    
+    # Format each one
+    formatted_links = []
 
-    return HttpResponse(parent_playlist_links)
+    for playlist_link in playlist_links:
+
+        # serialize these
+        formatted_links.append(playlist_link.serialize())
+
+    return render(request, 'playlist/index.j2', {
+        'playlist_links' : formatted_links
+    })
+
+@login_required
+def read(request, playlist_id = None):
+    return HttpResponse(playlist_id)
 
 @login_required
 def create(request):
@@ -65,19 +75,23 @@ def create(request):
             return redirect('/playlists/create')
 
 
-        # create a playlist link for each source
+        # Create the playlist link object
+        new_link = PlaylistLink(
+            user = user,
+            destination = destination
+        )
+
+        new_link.save()
+
+        # add each source
         for source in source_objects:
+            new_link.sources.add(source)
 
-            try:
+        try:
+            new_link.save()
 
-                PlaylistLink(
-                    user = user,
-                    source = source,
-                    destination = destination
-                ).save()
-
-            except IntegrityError:
-                pass
+        except IntegrityError:
+            return HttpResponse('IntegrityError')
 
         return redirect('/account')
 

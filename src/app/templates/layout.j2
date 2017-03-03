@@ -39,6 +39,12 @@
 
 			{% if user.is_authenticated %}
 
+				{% if user.is_superuser %}
+
+					<li><a href="/admin"><i class="material-icons left">supervisor_account</i>admin</a></li>
+
+				{% endif %}
+
 				<li><a href="/account"><i class="material-icons left">account_circle</i>my account</a></li>
 				<li><a href="/playlists"><i class="material-icons left">queue_music</i>playlists</a></li>
 
@@ -65,6 +71,12 @@
 
 						<li><a href="/playlists"><i class="material-icons left">queue_music</i>playlists</a></li>
 						<li><a href="/account"><i class="material-icons left">account_circle</i>my account</a></li>
+
+						{% if user.is_superuser %}
+
+							<li><a href="/admin"><i class="material-icons left">supervisor_account</i>admin</a></li>
+
+						{% endif %}
 
 					{% else %}
 

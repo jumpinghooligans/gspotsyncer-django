@@ -36,6 +36,9 @@ urlpatterns = [
     # Playlist List
     url(r'^playlists/$', playlist.index),
 
+    # Playlist read (integers)
+    url(r'^playlists/(?P<playlist_id>[0-9]+)/$', playlist.read),
+
     # Playlist Create
     url(r'^playlists/create/$', playlist.create),
 
