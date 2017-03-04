@@ -33,6 +33,11 @@ urlpatterns = [
     url(r'^account/spotify/return/$', user.spotify_return),
     url(r'^account/spotify/disconnect/$', user.spotify_disconnect),
 
+    # User YouTube Profile
+    url(r'^account/youtube/connect/$', user.youtube_connect),
+    url(r'^account/youtube/return/$', user.youtube_return),
+    url(r'^account/youtube/disconnect/$', user.youtube_disconnect),
+
     # Playlist List
     url(r'^playlists/$', playlist.index),
 

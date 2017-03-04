@@ -8,9 +8,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 
 # Model classes
-from app.models.user import User, GoogleProfile, SpotifyProfile
-from app.models.google import GoogleApi
-from app.models.spotify import SpotifyApi
+from app.models.user import User, GoogleProfile, SpotifyProfile, YoutubeProfile
+from app.api.google import GoogleApi
+from app.api.spotify import SpotifyApi
 
 from django.http import HttpResponse
 
@@ -99,10 +99,16 @@ def google_connect(request):
 
     # Update google credentials
     if request.method == 'POST':
+
+        # Delete if it exists
+        if hasattr(request.user, 'googleprofile'):
+            request.user.googleprofile.disconnect()
+
         # Get the POST data
         google_form = GoogleProfileForm(request.POST, instance=request.user)
 
         if google_form.is_valid():
+
             # There isn't anything to register against like spotify
             # so really we just make sure the creds work and thats it
             google_form.save()
@@ -129,7 +135,7 @@ def google_connect(request):
 def google_disconnect(request):
 
     # Delete if it exists
-    if request.user.googleprofile:
+    if hasattr(request.user, 'googleprofile'):
         request.user.googleprofile.disconnect()
 
     return redirect('/account')
@@ -138,8 +144,13 @@ def google_disconnect(request):
 @login_required
 def spotify_connect(request):
 
+    # clear out any links we have already
+    if hasattr(request.user, 'spotifyprofile'):
+        request.user.spotifyprofile.disconnect()
+
     # shoot them off to the Spotify auth
     spotify_profile = SpotifyProfile(user=request.user)
+
     return redirect(spotify_profile.connect_url(request))
 
 # Return URL for spotify, this is where we actually
@@ -172,8 +183,56 @@ def spotify_return(request):
 def spotify_disconnect(request):
 
     # Delete if it exists
-    if request.user.spotifyprofile:
+    if hasattr(request.user, 'spotifyprofile'):
         request.user.spotifyprofile.disconnect()
+
+    return redirect('/account')
+
+@login_required
+def youtube_connect(request):
+
+    # clear out any links we have already
+    if hasattr(request.user, 'youtubeprofile'):
+        request.user.youtubeprofile.disconnect()
+
+    # shoot them off to the Spotify auth
+    youtube_profile = YoutubeProfile(user=request.user)
+
+    flow = youtube_profile.get_flow(request)
+
+    return redirect(youtube_profile.connect_url(flow))
+
+@login_required
+def youtube_return(request):
+
+    # successful if we get a 'code' query param
+    if request.GET.get('code'):
+
+        # shoot them off to the Spotify auth
+        youtube_profile = YoutubeProfile(user=request.user)
+
+        flow = youtube_profile.get_flow(request)
+        code = request.GET.get('code')
+
+        if youtube_profile.connect(flow, code):
+            messages.add_message(request, messages.INFO, 'Succesfully linked your YouTube account!')
+
+        else:
+            messages.add_message(request, messages.ERROR, 'Something went wrong...')
+
+    else:
+
+        # in theory there should be an error
+        messages.add_message(request, messages.ERROR, request.GET.get('error', 'Something went wrong...'))    
+
+    return redirect('/account')
+
+@login_required
+def youtube_disconnect(request):
+
+    # Delete if it exists
+    if hasattr(request.user, 'youtubeprofile'):
+        request.user.youtubeprofile.disconnect()
 
     return redirect('/account')
 

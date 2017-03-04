@@ -23,10 +23,10 @@
     <playlist-link
         :spotify_playlists="spotify_playlists"
         :google_playlists="google_playlists"
-        :services="services"
+        :youtube_playlists="youtube_playlists"
+        :services="destination_services"
 
         field_name="destination"
-        field_suffix=""
     ></playlist-link>
 
 </div>
@@ -47,10 +47,10 @@
     <playlist-link
         :spotify_playlists="spotify_playlists"
         :google_playlists="google_playlists"
-        :services="services"
+        :youtube_playlists="youtube_playlists"
+        :services="source_services"
 
         field_name="source"
-        :field_suffix="'[' + (index - 1) + ']other'"
     ></playlist-link>
 
 </div>
@@ -96,6 +96,13 @@
                 </select>
             </div>
 
+            <div v-if="selected_service == 'yt'">
+                <label :for="field_name">YouTube Playlists</label>
+                <select class="browser-default" :name="field_name">
+                    <option v-for="playlist in youtube_playlists" :value="playlist.pk">${ playlist.fields.name } </option>
+                </select>
+            </div>
+
         </div>
 
     </div>
@@ -111,9 +118,9 @@ Vue.component('playlist-link', {
     props: [
         'spotify_playlists',
         'google_playlists',
+        'youtube_playlists',
         'services',
         'field_name',
-        'field_suffix'
     ],
 
     data: function() {
@@ -131,7 +138,9 @@ var app = new Vue({
     data: {
         spotify_playlists: {{ spotify_playlists|safe }},
         google_playlists: {{ google_playlists|safe }},
-        services: {{ services|safe }},
+        youtube_playlists: {{ youtube_playlists|safe }},
+        destination_services: {{ destination_services|safe }},
+        source_services: {{ source_services|safe }},
 
         playlist_link_count: 1
     },

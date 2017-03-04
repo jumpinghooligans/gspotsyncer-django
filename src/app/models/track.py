@@ -8,8 +8,9 @@ from django.core import serializers
 from app.models.core import AppModel
 from app.models.user import User
 
-from app.models.google import GoogleApi
-from app.models.spotify import SpotifyApi
+from app.api.google import GoogleApi
+from app.api.spotify import SpotifyApi
+from app.api.youtube import YoutubeApi
 
 import logging
 logger = logging.getLogger('consolelog')
@@ -97,6 +98,14 @@ class Track(AppModel):
             api = SpotifyApi(self.added_by)
             service_track = SpotifyTrack()
 
+        elif service == 'yt':
+            if not rediscover_existing and self.youtubetrack_set.count() > 0:
+                logger.info('Track already has a matching YoutubeTrack, skipping YT')
+                return True
+
+            api = YoutubeApi(self.added_by)
+            service_track = YoutubeTrack()
+
         # hit the correct service API and pull
         # some matching tracks
         matching_tracks = self.search(api)
@@ -132,6 +141,9 @@ class Track(AppModel):
                 elif service == 'sp':
                     t.spotifytrack_set.add(service_track)
 
+                elif service == 'yt':
+                    t.youtubetrack_set.add(service_track)
+
             except IntegrityError:
                 logger.info('Unable to save new service_track due to IntegrityError')
 
@@ -143,6 +155,9 @@ class Track(AppModel):
 
                 elif service == 'sp':
                     dup_track = SpotifyTrack.objects.get(spotify_id=service_track.spotify_id).track
+
+                elif service == 'yt':
+                    dup_track = YoutubeTrack.objects.get(youtube_id=service_track.youtube_id).track
 
                 # merge and delete the dummy track we made
                 logger.info('Found track ' + str(dup_track.pk) + ' with a linked service_track that caused the IntegrityError')
@@ -199,7 +214,7 @@ class Track(AppModel):
         except ValueError:
             pass
 
-        # if this track has spotify and we don't, attach it
+        # if this track has spotify track, attach it
         try:
             logger.info('Attempting to move SpotifyTracks over')
 
@@ -217,9 +232,9 @@ class Track(AppModel):
             valid_merge = True
 
         except ValueError:
-            logger.info('ValueError Exception')
+            logger.info('SpotifyTrack ValueError Exception in Merge')
 
-        # if this track has spotify and we don't, attach it
+        # if this track has google track, attach it
         try:
             logger.info('Attempting to move GoogleTracks over')
 
@@ -237,7 +252,27 @@ class Track(AppModel):
             valid_merge = True
 
         except ValueError:
-            logger.info('ValueError Exception')
+            logger.info('GoogleTrack ValueError Exception in Merge')
+
+        # if this track has google track, attach it
+        try:
+            logger.info('Attempting to move YoutubeTracks over')
+
+            for youtube_track in merge_track.youtubetrack_set.all():
+
+                logger.info('Moving GoogleTrack ' + str(youtube_track.pk) + ' from ' + str(merge_track.pk) + ' to ' + str(self.pk))
+
+                # attach this track to our merge target
+                youtube_track.track = self
+
+                # save it
+                youtube_track.save()
+
+            # consider this a valid merge
+            valid_merge = True
+
+        except ValueError:
+            logger.info('YoutubeTrack ValueError Exception in Merge')
 
 
         # If we were able to merge, we can save the track data
@@ -290,23 +325,34 @@ class Track(AppModel):
             part_dash, (title, primary_artist)
         )).encode('utf-8').strip().decode()
 
-        # full query, then alpha numeric only
-        queries.append(base_query)
-        queries.append(re.sub(r'([^\s\w]|_)+', '', base_query))
+        # hacky, if this is youtube, just try a simple base query,
+        # it seems to get really confused with specific searches
+        if isinstance(api, YoutubeApi):
 
-        # simple query, then alpha numeric only
-        queries.append(simple_base_query)
-        queries.append(re.sub(r'([^\s\w]|_)+', '', simple_base_query))
+            logger.info('Youtube, only using simple query')
 
-        queries.append(split_paren_query)
-        queries.append(simple_split_paren_query)
-        
-        queries.append(split_dash_query)
-        queries.append(simple_split_dash_query)
+            queries.append(simple_base_query)
+
+        else:
+            # full query, then alpha numeric only
+            queries.append(base_query)
+            queries.append(re.sub(r'([^\s\w]|_)+', '', base_query))
+
+            # simple query, then alpha numeric only
+            queries.append(simple_base_query)
+            queries.append(re.sub(r'([^\s\w]|_)+', '', simple_base_query))
+
+            queries.append(split_paren_query)
+            queries.append(simple_split_paren_query)
+            
+            queries.append(split_dash_query)
+            queries.append(simple_split_dash_query)
 
         # should probably be checking search 'scores'
         # and doing some better sorting here
         for query in queries:
+
+            logger.info('Querying: ' + query)
 
             matching_tracks += api.search_songs(query)
 
@@ -391,7 +437,6 @@ class SpotifyTrack(AppModel):
         new_track = Track()
 
         new_track.name = track.get('name')
-        new_track.status = 'live'
 
         artists = track.get('artists')
 
@@ -447,7 +492,6 @@ class GoogleTrack(AppModel):
         new_track = Track()
 
         new_track.name = track.get('title')
-        new_track.status = 'live'
         new_track.artist = track.get('artist')
         new_track.album = track.get('album')
 
@@ -455,5 +499,54 @@ class GoogleTrack(AppModel):
 
         if album_art_ref and len(album_art_ref) > 0:
             new_track.album_image = album_art_ref[0].get('url')
+
+        return new_track
+
+class YoutubeTrack(AppModel):
+    # base track
+    track = models.ForeignKey('Track', on_delete=models.CASCADE)
+
+    # service
+    service = models.CharField(
+        max_length=2,
+        choices=settings.SERVICES,
+        default='yt'
+    )
+
+    # if there is a user id, we should use that, manuel override
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+
+    youtube_id = models.CharField(max_length=255, unique=True)
+
+    # i'm lazy, just dump the rest of the track data here
+    track_data = fields.JSONField(null=True)
+    
+    def parse(self, track_data):
+
+        logger.info('YoutubeTrack parse')
+
+        track = track_data.get('track', {})
+
+        # could be a string
+        youtube_id = track_data.get('id')
+
+        # or nested (search result)
+        # try:
+        youtube_id = youtube_id.get('videoId', youtube_id)
+
+        self.youtube_id = youtube_id
+        
+        self.track_data = track_data
+
+    def generate_base_track(self):
+        
+        track_data = self.track_data
+        snippet = track_data.get('snippet', {})
+
+        new_track = Track()
+
+        new_track.name = snippet.get('title')
+
+        logger.info(new_track.name)
 
         return new_track

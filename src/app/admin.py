@@ -1,8 +1,8 @@
 from django.contrib import admin
 
-from .models.user import Profile, GoogleProfile, SpotifyProfile
+from .models.user import Profile, GoogleProfile, SpotifyProfile, YoutubeProfile
 from .models.playlist import Playlist, PlaylistLink
-from .models.track import Track, TrackLink, SpotifyTrack, GoogleTrack
+from .models.track import Track, TrackLink, SpotifyTrack, GoogleTrack, YoutubeTrack
 
 import logging
 logger = logging.getLogger('consolelog')
@@ -42,6 +42,11 @@ class GoogleProfileAdmin(AppModelAdmin):
 @admin.register(SpotifyProfile)
 class SpotifyProfileAdmin(AppModelAdmin):
     list_display = ('user',)
+
+@admin.register(YoutubeProfile)
+class YoutubeProfileAdmin(AppModelAdmin):
+    list_display = ('user',)
+    readonly_fields = ('credentials',)
 
 
 @admin.register(Playlist)
@@ -93,11 +98,15 @@ class GoogleTrackAdminInline(admin.TabularInline):
     model = GoogleTrack
     extra = 0
 
+class YoutubeTrackAdminInline(admin.TabularInline):
+    model = YoutubeTrack
+    extra = 0
+
 @admin.register(Track)
 class TrackAdmin(AppModelAdmin):
     search_fields = ['name', 'artist', 'album',]
     list_display = ('name', 'artist',)
-    inlines = (SpotifyTrackAdminInline, GoogleTrackAdminInline,)
+    inlines = (SpotifyTrackAdminInline, GoogleTrackAdminInline, YoutubeTrackAdminInline,)
     actions = ['rediscover',]
 
     # rediscover service links

@@ -4,3 +4,5 @@ requests
 postgres
 celery[redis]
 gmusicapi
+google-api-python-client
+oauth2client

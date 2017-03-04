@@ -1,11 +1,9 @@
 import requests, json
 
-from django.db import models
-
 import logging
 logger = logging.getLogger('consolelog')
 
-class SpotifyApi(models.Model):
+class SpotifyApi():
 
 	def __init__(self, user):
 		# shouldn't need this

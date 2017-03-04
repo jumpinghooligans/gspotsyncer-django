@@ -1,10 +1,9 @@
-from django.db import models
 from gmusicapi import Mobileclient
 
 import logging, time
 logger = logging.getLogger('consolelog')
 
-class GoogleApi(models.Model):
+class GoogleApi():
 
     def __init__(self, user):
         # we'll probably need this later
@@ -36,7 +35,7 @@ class GoogleApi(models.Model):
         # attempt login (sometimes we gate rate limited)
         refresh_attempts = 10
         current_attempt = 1
-        refresh_delay = 3
+        refresh_seed = 3
 
         while refresh_attempts > 0:
 
@@ -51,7 +50,9 @@ class GoogleApi(models.Model):
                 break
 
             else:
-                logger.error('Failed to authenticate, sleeping (attempt ' + str(current_attempt) + ')')
+                refresh_delay = refresh_seed ** current_attempt
+
+                logger.error('Failed to authenticate, sleeping for ' + str(refresh_delay) + ' seconds (attempt ' + str(current_attempt) + ')')
                 time.sleep(refresh_delay)
                 refresh_attempts -= 1
                 current_attempt += 1

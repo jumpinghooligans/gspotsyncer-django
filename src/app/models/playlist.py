@@ -9,8 +9,9 @@ from app.models.user import User
 
 from app.models.track import Track, TrackLink, SpotifyTrack, GoogleTrack
 
-from app.models.google import GoogleApi
-from app.models.spotify import SpotifyApi
+from app.api.google import GoogleApi
+from app.api.spotify import SpotifyApi
+from app.api.youtube import YoutubeApi
 
 import logging, random
 logger = logging.getLogger('consolelog')
@@ -483,3 +484,67 @@ class SpotifyPlaylist(Playlist):
 
             # increment (python doesn't do ++ ... ?)
             track_idx += 1
+
+class YoutubePlaylist(Playlist):
+
+    # This is a proxy model, mostly just for me to separate
+    # different services code, it all saves to the base Playlist
+    class Meta:
+        proxy = True
+
+    # Take a Spotify playlist JSON object
+    # and parse it into a Playlist
+    def parse(self, playlist_data):
+        self.parse_final_data(playlist_data)
+        self.parse_variable_data(playlist_data)
+
+    # This data will be frozen
+    def parse_final_data(self, playlist_data):
+        self.service = 'yt'
+        self.service_id = playlist_data.get('id')
+
+    # This data will be updated every refresh
+    def parse_variable_data(self, playlist_data):
+        snippet = playlist_data.get('snippet', {})
+
+        self.name = snippet.get('title')
+
+        self.raw = playlist_data
+
+    def get_service_track_ids(self, status):
+        
+        service_track_ids = []
+
+        for track in self.tracks.filter(tracklink__status=status):
+
+            # gonna have to change this later
+            youtube_track = track.youtubetrack_set.first()
+
+            if youtube_track:
+
+                service_track_ids.append(youtube_track.youtube_id)
+
+        return service_track_ids
+
+    def add_tracks(self, track_ids):
+        api = YoutubeApi(self.user)
+
+        playlist_id = self.service_id
+
+        return api.playlist_add(playlist_id, track_ids)
+
+    # remove errything - ignore specific tracks
+    # for now
+    def remove_tracks(self, track_ids):
+
+        api = YoutubeApi(self.user)
+
+        playlist_id = self.service_id
+
+        api.playlist_clear(playlist_id)
+
+    # this doesn't really work since we don't have sufficient
+    # metadata to parse tracks, so right now youtube is 
+    # write only (clear it out and rewrite)
+    def refresh_tracks(self, refresh_playlists = False):
+        pass

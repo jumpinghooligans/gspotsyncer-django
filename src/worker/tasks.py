@@ -21,7 +21,7 @@ def trigger_discover_track(sender, instance, created, **kwargs):
 
 # Actual task to run (100 per minute)
 # rate_limit='100/m'
-@shared_task(rate_limit='50/m')
+@shared_task(rate_limit='20/m')
 def discover_track(track_id):
 
     try:

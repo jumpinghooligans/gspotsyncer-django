@@ -8,10 +8,17 @@ from django.contrib.postgres import fields
 from django.dispatch import receiver
 from django.db.models import signals
 
+from apiclient.discovery import build
+from oauth2client.contrib import xsrfutil
+from oauth2client.contrib.django_util.models import CredentialsField
+from oauth2client.contrib.django_util.storage import DjangoORMStorage
+from oauth2client.client import OAuth2WebServerFlow
+
 from app.models.core import AppModel
-from app.models.google import GoogleApi
-from app.models.spotify import SpotifyApi
-from app.models.playlist import GooglePlaylist, SpotifyPlaylist
+from app.api.google import GoogleApi
+from app.api.spotify import SpotifyApi
+from app.api.youtube import YoutubeApi
+from app.models.playlist import GooglePlaylist, SpotifyPlaylist, YoutubePlaylist
 
 import logging
 logger = logging.getLogger('consolelog')
@@ -33,6 +40,13 @@ class Profile(AppModel):
         # Spotify
         try:
             self.user.spotifyprofile.refresh_external_playlists(refresh_tracks)
+
+        except SpotifyProfile.DoesNotExist:
+            pass
+
+        # Youtube
+        try:
+            self.user.youtubeprofile.refresh_external_playlists(refresh_tracks)
 
         except SpotifyProfile.DoesNotExist:
             pass
@@ -262,3 +276,94 @@ class SpotifyProfile(AppModel):
     def get_encoded_auth(self):
         auth_string = settings.SPOTIFY_CLIENT_ID + ':' + settings.SPOTIFY_CLIENT_SECRET
         return base64.b64encode(auth_string.encode()).decode()
+
+class YoutubeProfile(AppModel):
+    # link to User model
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    # Special Google API credential field
+    credentials = CredentialsField()
+
+    def refresh_external_playlists(self, refresh_tracks = False):
+
+        logger.info('YoutubeProfile refresh_external_playlists')
+
+        api = YoutubeApi(self.user)
+
+        external_playlists = api.get_playlists()
+
+        for playlist in external_playlists:
+
+            # create a new playlist
+            new_playlist = YoutubePlaylist(user=self.user)
+
+            # parse the data
+            new_playlist.parse(playlist)
+
+            # save it or update it
+            try:
+                new_playlist.save()
+
+                # set this as the working playlist
+                working_playlist = new_playlist
+
+            except IntegrityError:
+                # pull the existing one from the db
+                existing_playlist = YoutubePlaylist.objects.get(service='yt', service_id=new_playlist.service_id)
+
+                # update with our variable values
+                existing_playlist.parse_variable_data(playlist)
+
+                # save!
+                existing_playlist.save()
+
+                # set this as the working playlist
+                working_playlist = existing_playlist
+
+            if refresh_tracks:
+                working_playlist.refresh_tracks()
+
+    def get_credentials(self):
+
+        # get the storage object
+        storage = DjangoORMStorage(YoutubeProfile, 'user', self.user, 'credentials')
+
+        credentials = storage.get()
+
+        logger.info(credentials.invalid)
+
+        return credentials
+
+
+    def connect(self, flow, code):
+
+        credentials = flow.step2_exchange(code)
+
+        storage = DjangoORMStorage(YoutubeProfile, 'user', self.user, 'credentials')
+
+        storage.put(credentials)
+
+        return True
+
+    def disconnect(self):
+
+        # nice and simple
+        return self.delete()
+
+    # The URL we redirect them to to validate their
+    # youtube credentials and get us a token
+    def connect_url(self, flow):
+
+        return flow.step1_get_authorize_url()
+
+    def get_flow(self, request):
+
+        return OAuth2WebServerFlow(
+            client_id=settings.GOOGLE_OAUTH2_CLIENT_ID,
+            client_secret=settings.GOOGLE_OAUTH2_CLIENT_SECRET,
+            scope='https://www.googleapis.com/auth/youtube',
+            redirect_uri=self.return_url(request)
+        )
+    
+    def return_url(self, request):
+        return 'http://' + request.get_host() + '/account/youtube/return'

@@ -172,16 +172,18 @@ LOGIN_REDIRECT_URL = '/account/'
 SERVICES = (
     ('sp', 'Spotify'),
     ('gm', 'Google Music'),
-    # ('yt', 'YouTube'),
+    ('yt', 'YouTube'),
 )
 
 # gspotsyncer specific
 SPOTIFY_CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
 SPOTIFY_CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
 
+# this is not google music, only youtube
+GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('GOOGLE_OAUTH2_CLIENT_ID')
+GOOGLE_OAUTH2_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH2_CLIENT_SECRET')
 
 # Worker Broker
-
 BROKER_URL = 'amqp://{user}:{password}@{hostname}/'.format(
     user='admin',
     password='password',

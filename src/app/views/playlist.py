@@ -5,8 +5,8 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
-from app.models.spotify import SpotifyApi
-from app.models.google import GoogleApi
+from app.api.spotify import SpotifyApi
+from app.api.google import GoogleApi
 
 from app.models.playlist import Playlist, PlaylistLink
 
@@ -104,7 +104,13 @@ def create(request):
     # playlists registered with google music
     google_playlists = user.playlist_set.filter(service='gm')
 
-    services = [
+    # playlists registered with google music
+    youtube_playlists = user.playlist_set.filter(service='yt')
+
+    logger.info(youtube_playlists)
+
+    # services we can write to
+    destination_services = [
         {
             'id' : 'gm',
             'name' : 'Google Music'
@@ -112,11 +118,29 @@ def create(request):
         {
             'id' : 'sp',
             'name' : 'Spotify'
+        },
+        {
+            'id' : 'yt',
+            'name' : 'YouTube'
         }
+    ]
+
+    # services we can read from (not youtube)
+    source_services = [
+        {
+            'id' : 'gm',
+            'name' : 'Google Music'
+        },
+        {
+            'id' : 'sp',
+            'name' : 'Spotify'
+        },
     ]
 
     return render(request, 'playlist/create.j2', {
         'spotify_playlists' : serializers.serialize('json', spotify_playlists),
         'google_playlists' : serializers.serialize('json', google_playlists),
-        'services' : services
+        'youtube_playlists' : serializers.serialize('json', youtube_playlists),
+        'destination_services' : destination_services,
+        'source_services' : source_services
     })
