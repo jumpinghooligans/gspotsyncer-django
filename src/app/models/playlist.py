@@ -175,6 +175,7 @@ class PlaylistLink(AppModel):
         self.destination.refresh_tracks(True)
 
         self.published = datetime.now()
+        self.save(update_fields=['published'])
 
     # build a set of draft links
     def build_draft(self):
@@ -212,6 +213,8 @@ class PlaylistLink(AppModel):
                 running_order += 1
 
         self.refreshed = datetime.now()
+        self.save(update_fields=['refreshed'])
+
 
     # build a serializeable playlist link object
     def serialize(self, include_tracks = False):

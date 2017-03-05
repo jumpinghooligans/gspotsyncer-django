@@ -24,9 +24,9 @@
                             <br />
                             <span class="grey-text">source(s)</span>{% for source in playlist_link.sources.all() %} {{ source.name }} {% endfor %}
                             <br />
-                            <span class="grey-text">refreshed</span> {{ playlist_link.last_refreshed if playlist_link.last_refreshed else 'never' }}
+                            <span class="grey-text">refreshed</span> {{ playlist_link.refreshed.strftime('%D - %r') if playlist_link.refreshed else 'never' }}
                             <br />
-                            <span class="grey-text">published</span> {{ playlist_link.last_published if playlist_link.last_published else 'never' }}
+                            <span class="grey-text">published</span> {{ playlist_link.published.strftime('%D - %r') if playlist_link.published else 'never' }}
                         </div>
                     </div>
                 </div>
