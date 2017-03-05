@@ -8,25 +8,25 @@
 
 <div id="account-summary" class="row">
     <div class="col s12 m6">
-        <strong>Latest Playlists</strong>
-        {% if playlists %}
+        <strong>Latest Playlist Links</strong>
+        {% if playlist_links %}
             <div class="collection">
-            {% for playlist in playlists %}
+            {% for playlist_link in playlist_links %}
                 <div class="collection-item">
                     <div class="row">
-                        <div class="col s4 l3">
-                        {% if playlist.random_album_art %}
-                            <img class="responsive-img album-art" src="{{ playlist.random_album_art }}" />
+                        <div class="col s4">
+                        {% if playlist_link.random_album_art %}
+                            <img class="responsive-img album-art" src="{{ playlist_link.random_album_art }}" />
                         {% endif %}
                         </div>
-                        <div class="col s8 l9">
-                            <strong><a href="/playlists/{{ playlist._id }}">{{ playlist.name }}</a></strong>
+                        <div class="col s8">
+                            <strong><a href="/playlists/{{ playlist_link.pk }}">{{ playlist_link.destination.name }}</a></strong>
                             <br />
-                            <span class="grey-text">master</span> {{ playlist.master }}
+                            <span class="grey-text">source(s)</span>{% for source in playlist_link.sources.all() %} {{ source.name }} {% endfor %}
                             <br />
-                            <span class="grey-text">refreshed</span> {{ playlist.last_refreshed if playlist.last_refreshed else 'never' }}
+                            <span class="grey-text">refreshed</span> {{ playlist_link.last_refreshed if playlist_link.last_refreshed else 'never' }}
                             <br />
-                            <span class="grey-text">published</span> {{ playlist.last_published if playlist.last_published else 'never' }}
+                            <span class="grey-text">published</span> {{ playlist_link.last_published if playlist_link.last_published else 'never' }}
                         </div>
                     </div>
                 </div>

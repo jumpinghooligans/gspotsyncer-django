@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from django.forms.models import model_to_dict
 from django.contrib.postgres import fields
@@ -73,9 +75,7 @@ class Playlist(AppModel):
         tracks = self.tracks.all()
 
         # pick a random track and grab its album image
-        random_album_art = None
-        if tracks.count() > 0:
-            random_album_art = tracks[ random.randint(0, (tracks.count() - 1)) ].album_image
+        random_album_art = self.get_random_album_art(tracks)
 
         # get base playlist
         playlist = {
@@ -107,6 +107,20 @@ class Playlist(AppModel):
 
         return playlist
 
+    def get_random_album_art(self, tracks = None):
+
+        if not tracks:
+
+            tracks = self.tracks.all()
+
+        random_album_art = None
+
+        if tracks.count() > 0:
+
+            random_album_art = tracks[ random.randint(0, (tracks.count() - 1)) ].album_image
+
+        return random_album_art
+
     def __str__(self):
          return self.name + " (" + self.service + ")"
 
@@ -122,6 +136,13 @@ class PlaylistLink(AppModel):
 
     # many sources
     sources = models.ManyToManyField('Playlist')
+
+    # shortcut
+    random_album_art = models.CharField(max_length=500, null=True)
+
+    # timestamps
+    refreshed = models.DateTimeField(null=True)
+    published = models.DateTimeField(null=True)
 
     # publish any tracklinks marked as draft
     def publish_draft(self):
@@ -152,6 +173,8 @@ class PlaylistLink(AppModel):
 
         # for safety, refresh external tracks of destination
         self.destination.refresh_tracks(True)
+
+        self.published = datetime.now()
 
     # build a set of draft links
     def build_draft(self):
@@ -188,6 +211,8 @@ class PlaylistLink(AppModel):
 
                 running_order += 1
 
+        self.refreshed = datetime.now()
+
     # build a serializeable playlist link object
     def serialize(self, include_tracks = False):
 
@@ -208,10 +233,18 @@ class PlaylistLink(AppModel):
             playlist_link['sources'].append(source.serialize())
 
         # grab an image from the first source playlist
-        s = next(iter(playlist_link.get('sources')))
-        playlist_link['random_album_art'] = s.get('random_album_art', '')
+        self.refresh_random_album_art()
+        playlist_link['random_album_art'] = self.random_album_art
 
         return playlist_link
+
+    def refresh_random_album_art(self):
+
+        source = self.sources.first()
+
+        self.random_album_art = source.get_random_album_art()
+
+        self.save(update_fields=['random_album_art'])
 
 
     class Meta:

@@ -40,8 +40,8 @@
 			{% if user.is_authenticated %}
 
 				<li><a href="/account"><i class="material-icons left">account_circle</i>my account</a></li>
-				<li><a href="/playlists"><i class="material-icons left">queue_music</i>playlists</a></li>
-				
+				<li><a href="/playlists"><i class="material-icons left">queue_music</i>playlist links</a></li>
+
 
 				{% if user.is_superuser %}
 
@@ -70,7 +70,7 @@
 
 					{% if user.is_authenticated %}
 
-						<li><a href="/playlists"><i class="material-icons left">queue_music</i>playlists</a></li>
+						<li><a href="/playlists"><i class="material-icons left">queue_music</i>playlist links</a></li>
 						<li><a href="/account"><i class="material-icons left">account_circle</i>my account</a></li>
 
 						{% if user.is_superuser %}

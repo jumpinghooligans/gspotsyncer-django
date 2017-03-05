@@ -58,9 +58,12 @@ def account(request):
     google_form = GoogleProfileForm(instance=request.user)
     user_form = ModifyForm(instance=request.user, label_suffix='')
 
+    playlist_links = request.user.playlistlink_set.all()[0:3]
+
     return render(request, 'user/account.j2', { 
         'user_form' : user_form,
         'google_form' : google_form,
+        'playlist_links' : playlist_links
     })
 
 # Account modifications
