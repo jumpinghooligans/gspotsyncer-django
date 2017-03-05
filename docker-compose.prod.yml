@@ -1,0 +1,31 @@
+version: '2'
+services:
+  gspotsyncer:
+    links:
+      - jenkins
+      - nginx-proxy
+    depends_on:
+      - jenkins
+      - nginx-proxy
+    environment:
+      - APP_ENV=PROD
+      - VIRTUAL_HOST=gspotsyncer.com,www.gspotsyncer.com
+
+  worker:
+    environment:
+      - APP_ENV=WORKER-PROD
+
+  jenkins:
+    image: jenkins
+    environment:
+      - VIRTUAL_HOST=jenkins.gspotsyncer.com
+      - VIRTUAL_PORT=8080
+    volumes:
+      - ./jenkins:/var/jenkins_home
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro

@@ -48,7 +48,13 @@ urlpatterns = [
     url(r'^playlists/(?P<playlist_link_id>[0-9]+)/$', playlist.read),
 
     # Playlist publish
+    url(r'^playlists/(?P<playlist_link_id>[0-9]+)/rebuild/$', playlist.rebuild),
+
+    # Playlist publish
     url(r'^playlists/(?P<playlist_link_id>[0-9]+)/publish/$', playlist.publish),
+
+    # Playlist delete
+    url(r'^playlists/(?P<playlist_link_id>[0-9]+)/delete/$', playlist.delete),
 
     # Playlist Create
     url(r'^playlists/create/$', playlist.create),

@@ -1,0 +1,4 @@
+.ssh/
+.java/
+jobs/*/*.log
+logs/

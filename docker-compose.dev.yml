@@ -1,0 +1,11 @@
+version: '2'
+services:
+  gspotsyncer:
+    environment:
+      - APP_ENV=DEV
+    ports:
+     - "80:8000"
+
+  worker:
+    environment:
+      - APP_ENV=WORKER-DEV

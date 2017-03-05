@@ -5,6 +5,8 @@ services:
     command: /var/gspotsyncer/run_gspotsyncer.sh
     volumes:
       - ./src:/var/gspotsyncer
+    env_file:
+      - ./docker/environment.env
     depends_on:
       - postgres
       - redis
@@ -13,28 +15,38 @@ services:
       - postgres
       - redis
       - rabbitmq
-    ports:
-     - "80:8000"
     restart: always
+
   worker:
     build: .
     command: /var/gspotsyncer/run_worker.sh
     volumes:
       - ./src:/var/gspotsyncer
     user: worker
+    env_file:
+      - ./docker/environment.env
     links:
       - postgres
       - redis
       - rabbitmq
     depends_on:
       - rabbitmq
+
   postgres:
     image: postgres
+    env_file:
+      - ./docker/environment.env
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+
   redis:
     image: redis
+    env_file:
+      - ./docker/environment.env
+
   rabbitmq:
     image: rabbitmq
+    env_file:
+      - ./docker/environment.env
     ports:
-      - "15672:15672"
+      - "5672:5672"

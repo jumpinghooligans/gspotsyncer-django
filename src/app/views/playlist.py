@@ -35,6 +35,17 @@ def index(request):
 
 
 @login_required
+def rebuild(request, playlist_link_id = None):
+
+    user = request.user
+
+    playlist_link = user.playlistlink_set.get(pk=playlist_link_id)
+
+    playlist_link.build_draft()
+
+    return redirect('/playlists/' + playlist_link_id)
+
+@login_required
 def publish(request, playlist_link_id = None):
 
     user = request.user
@@ -171,3 +182,14 @@ def create(request):
         'destination_services' : destination_services,
         'source_services' : source_services
     })
+
+@login_required
+def delete(request, playlist_link_id = None):
+
+    user = request.user
+
+    playlist_link = user.playlistlink_set.get(pk=playlist_link_id)
+
+    playlist_link.delete()
+
+    return redirect('/playlists')
