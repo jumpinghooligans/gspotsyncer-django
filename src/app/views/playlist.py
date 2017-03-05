@@ -2,6 +2,7 @@ from django import forms
 from django.db import IntegrityError
 from django.shortcuts import render, redirect
 from django.core import serializers
+from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
@@ -25,17 +26,38 @@ def index(request):
     formatted_links = []
 
     for playlist_link in playlist_links:
-
         # serialize these
         formatted_links.append(playlist_link.serialize())
 
     return render(request, 'playlist/index.j2', {
-        'playlist_links' : formatted_links
+        'playlist_links' : json.dumps(formatted_links)
     })
 
+
 @login_required
-def read(request, playlist_id = None):
-    return HttpResponse(playlist_id)
+def publish(request, playlist_link_id = None):
+
+    user = request.user
+
+    playlist_link = user.playlistlink_set.get(pk=playlist_link_id)
+
+    playlist_link.publish_draft()
+
+    return redirect('/playlists/' + playlist_link_id)
+
+@login_required
+def read(request, playlist_link_id = None):
+
+    user = request.user
+
+    if request.method == 'POST':
+        pass
+
+    playlist_link = user.playlistlink_set.get(pk=playlist_link_id)
+
+    return render(request, 'playlist/read.j2', {
+        'playlist_link' : json.dumps(playlist_link.serialize(True))
+    })
 
 @login_required
 def create(request):
@@ -81,17 +103,24 @@ def create(request):
             destination = destination
         )
 
-        new_link.save()
-
-        # add each source
-        for source in source_objects:
-            new_link.sources.add(source)
-
         try:
             new_link.save()
 
+            # add each source
+            for source in source_objects:
+
+                new_link.sources.add(source)
+
+            # build out our new draft
+            new_link.build_draft()
+
+            return redirect('/playlists/' + str(new_link.pk))
+
         except IntegrityError:
-            return HttpResponse('IntegrityError')
+            
+            messages.add_message(request, messages.ERROR, 'The selected destination playlist is already in use')
+
+            return redirect('/playlists/create')
 
         return redirect('/account')
 
@@ -106,8 +135,6 @@ def create(request):
 
     # playlists registered with google music
     youtube_playlists = user.playlist_set.filter(service='yt')
-
-    logger.info(youtube_playlists)
 
     # services we can write to
     destination_services = [

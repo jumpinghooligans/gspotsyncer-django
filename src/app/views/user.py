@@ -236,6 +236,14 @@ def youtube_disconnect(request):
 
     return redirect('/account')
 
+
+@login_required
+def refresh_external_playlists(request):
+
+    request.user.profile.refresh_external_playlists()
+
+    return redirect(request.POST.get('next', '/playlists/create'))
+
 #
 # FORMS
 #

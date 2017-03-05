@@ -27,7 +27,7 @@ class Playlist(AppModel):
     # where does this playlist belong
     service = models.CharField(
         max_length=2,
-        choices=settings.SERVICES
+        choices=settings.SERVICE_CHOICES
     )
     # how to get more data
     service_id = models.CharField(max_length=255)
@@ -69,7 +69,7 @@ class Playlist(AppModel):
 
 
     # simple for now
-    def serialize(self):
+    def serialize(self, include_tracks = False):
         tracks = self.tracks.all()
 
         # pick a random track and grab its album image
@@ -87,14 +87,23 @@ class Playlist(AppModel):
             'url' : self.url,
             'owner_id' : self.owner_id,
             'random_album_art' : random_album_art or '',
-            'tracks' : [],
+            'live_tracks' : [],
+            'draft_tracks' : [],
         }
 
-        # Man python and passing data to the front end is ... interesting
-        for track in tracks.all():
+        if include_tracks:
 
-            # Add a serialized track
-            playlist.get('tracks').append(track.serialize())
+            # Man python and passing data to the front end is ... interesting
+            for track in tracks.filter(tracklink__status='live').order_by('tracklink__order'):
+
+                # Add a serialized track
+                playlist.get('live_tracks').append(track.serialize())
+
+            # Man python and passing data to the front end is ... interesting
+            for track in tracks.filter(tracklink__status='draft').order_by('tracklink__order'):
+
+                # Add a serialized track
+                playlist.get('draft_tracks').append(track.serialize())
 
         return playlist
 
@@ -147,12 +156,14 @@ class PlaylistLink(AppModel):
     # build a set of draft links
     def build_draft(self):
 
+        # first refresh what we have live
+        self.destination.refresh_tracks(True)
+
         # clear out any current draft track links
         self.destination.tracklink_set.filter(status='draft').delete()
 
         # for now just loop through each source playlist
         # and add that draft track
-
         running_order = 1
         for source_playlist in self.sources.all():
 
@@ -178,7 +189,7 @@ class PlaylistLink(AppModel):
                 running_order += 1
 
     # build a serializeable playlist link object
-    def serialize(self):
+    def serialize(self, include_tracks = False):
 
         playlist_link = {}
 
@@ -186,7 +197,7 @@ class PlaylistLink(AppModel):
         playlist_link['pk'] = self.pk
 
         # destination playlist
-        playlist_link['destination'] = self.destination.serialize()
+        playlist_link['destination'] = self.destination.serialize(include_tracks)
 
         # source playlists
         playlist_link['sources'] = []
@@ -235,10 +246,10 @@ class GooglePlaylist(Playlist):
         
         service_track_ids = []
 
-        for track in self.tracks.filter(tracklink__status=status):
+        for track in self.tracks.filter(tracklink__status=status).order_by('tracklink__order'):
 
             # gonna have to change this later
-            google_track = track.googletrack_set.first()
+            google_track = track.get_google_track()
 
             if google_track:
 
@@ -395,10 +406,10 @@ class SpotifyPlaylist(Playlist):
         
         service_track_ids = []
 
-        for track in self.tracks.filter(tracklink__status=status):
+        for track in self.tracks.filter(tracklink__status=status).order_by('tracklink__order'):
 
             # gonna have to change this later
-            spotify_track = track.spotifytrack_set.first()
+            spotify_track = track.get_spotify_track()
 
             if spotify_track:
 
@@ -515,10 +526,10 @@ class YoutubePlaylist(Playlist):
         
         service_track_ids = []
 
-        for track in self.tracks.filter(tracklink__status=status):
+        for track in self.tracks.filter(tracklink__status=status).order_by('tracklink__order'):
 
             # gonna have to change this later
-            youtube_track = track.youtubetrack_set.first()
+            youtube_track = track.get_youtube_track()
 
             if youtube_track:
 

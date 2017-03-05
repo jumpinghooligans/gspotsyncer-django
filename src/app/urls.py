@@ -41,8 +41,14 @@ urlpatterns = [
     # Playlist List
     url(r'^playlists/$', playlist.index),
 
+    # Refresh all playlists
+    url(r'^playlists/refresh/$', user.refresh_external_playlists),
+
     # Playlist read (integers)
-    url(r'^playlists/(?P<playlist_id>[0-9]+)/$', playlist.read),
+    url(r'^playlists/(?P<playlist_link_id>[0-9]+)/$', playlist.read),
+
+    # Playlist publish
+    url(r'^playlists/(?P<playlist_link_id>[0-9]+)/publish/$', playlist.publish),
 
     # Playlist Create
     url(r'^playlists/create/$', playlist.create),

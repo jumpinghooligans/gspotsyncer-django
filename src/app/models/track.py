@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 from django.db import models, IntegrityError
 from django.contrib.postgres import fields
@@ -26,6 +27,24 @@ class Track(AppModel):
     # fallback but...
     added_by = models.ForeignKey(User, null=True, default=None, on_delete=models.SET_DEFAULT)
 
+    # last time we tried to discover
+    processed = models.DateTimeField(null=True)
+
+    def get_google_track(self):
+
+        if hasattr(self, 'googletrack_set'):
+            return self.googletrack_set.first()
+
+    def get_spotify_track(self):
+
+        if hasattr(self, 'googletrack_set'):
+            return self.spotifytrack_set.first()
+
+    def get_youtube_track(self):
+
+        if hasattr(self, 'googletrack_set'):
+            return self.youtubetrack_set.first()
+
     # 'discovering' a track is a two part process
     #  - check our local tracks for an exact match
     #  - using the service API, search for the best match
@@ -50,8 +69,12 @@ class Track(AppModel):
 
             for service in settings.SERVICES:
 
-                service_match = self.discover_service(service[0])
+                service_match = self.discover_service(service)
                 found_match = (found_match and service_match)
+
+        # update the processed time
+        self.processed = datetime.now()
+        self.save(update_fields=['processed'])
 
         return found_match
 
@@ -78,6 +101,7 @@ class Track(AppModel):
 
     # This will search the given services
     def discover_service(self, service, rediscover_existing = False):
+        service = service.get('id')
         logger.info('Discover service on ' + service)
 
         api = False
@@ -369,6 +393,12 @@ class Track(AppModel):
             'album' : self.album,
             'album_image' : self.album_image,
             'added_by' : self.added_by.username,
+            'processed' : str(self.processed),
+
+            # service specific
+            'googletrack' : self.get_google_track().serialize() if self.get_google_track() else None,
+            'spotifytrack' : self.get_spotify_track().serialize() if self.get_spotify_track() else None,
+            'youtubetrack' : self.get_youtube_track().serialize() if self.get_youtube_track() else None
         }
 
     class Meta:
@@ -402,7 +432,7 @@ class SpotifyTrack(AppModel):
     # service
     service = models.CharField(
         max_length=2,
-        choices=settings.SERVICES,
+        choices=settings.SERVICE_CHOICES,
         default='sp'
     )
 
@@ -416,6 +446,12 @@ class SpotifyTrack(AppModel):
     # i'm lazy, just dump the rest of the track data here
     track_data = fields.JSONField(null=True)
     
+    def serialize(self):
+
+        return {
+            'uri' : self.uri,
+        }
+
     def parse(self, track_data):
 
         logger.info('SpotifyTrack parse')
@@ -458,7 +494,7 @@ class GoogleTrack(AppModel):
     # service
     service = models.CharField(
         max_length=2,
-        choices=settings.SERVICES,
+        choices=settings.SERVICE_CHOICES,
         default='gm'
     )
 
@@ -470,6 +506,12 @@ class GoogleTrack(AppModel):
 
     # i'm lazy, just dump the rest of the track data here
     track_data = fields.JSONField(null=True)
+    
+    def serialize(self):
+
+        return {
+            'google_id' : self.google_id,
+        }
     
     def parse(self, track_data):
 
@@ -509,7 +551,7 @@ class YoutubeTrack(AppModel):
     # service
     service = models.CharField(
         max_length=2,
-        choices=settings.SERVICES,
+        choices=settings.SERVICE_CHOICES,
         default='yt'
     )
 
@@ -521,6 +563,12 @@ class YoutubeTrack(AppModel):
     # i'm lazy, just dump the rest of the track data here
     track_data = fields.JSONField(null=True)
     
+    def serialize(self):
+
+        return {
+            'youtube_id' : self.youtube_id,
+        }
+
     def parse(self, track_data):
 
         logger.info('YoutubeTrack parse')

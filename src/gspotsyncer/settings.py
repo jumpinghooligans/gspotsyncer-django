@@ -168,8 +168,25 @@ STATIC_URL = '/static/'
 LOGIN_URL = '/account/login/'
 LOGIN_REDIRECT_URL = '/account/'
 
+SERVICES = [
+    {
+        'name' : 'Spotify',
+        'id' : 'sp',
+        'profile' : 'spotifyprofile',
+    },
+    {
+        'name' : 'Google Play Music',
+        'id' : 'gm',
+        'profile' : 'googleprofile',
+    },
+    {
+        'name' : 'YouTube',
+        'id' : 'yt',
+        'profile' : 'youtubeprofile',
+    },
+]
 
-SERVICES = (
+SERVICE_CHOICES = (
     ('sp', 'Spotify'),
     ('gm', 'Google Music'),
     ('yt', 'YouTube'),

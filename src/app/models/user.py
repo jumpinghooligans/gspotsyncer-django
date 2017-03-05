@@ -51,6 +51,8 @@ class Profile(AppModel):
         except SpotifyProfile.DoesNotExist:
             pass
 
+        return True
+
 # On User create, create a blank profile
 @receiver(signals.post_save, sender=User)
 def create_blank_profile(sender, instance, created, **kwargs):
