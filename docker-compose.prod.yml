@@ -13,7 +13,7 @@ services:
 
   worker:
     environment:
-      - APP_ENV=WORKER-PROD
+      - APP_ENV=PROD
 
   jenkins:
     image: jenkins

@@ -8,4 +8,4 @@ services:
 
   worker:
     environment:
-      - APP_ENV=WORKER-DEV
+      - APP_ENV=DEV

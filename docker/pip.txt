@@ -1,8 +1,9 @@
 django
 django-jinja
+dj-static
+celery[redis]
+gunicorn
 requests
 postgres
-celery[redis]
 gmusicapi
 google-api-python-client
-oauth2client
