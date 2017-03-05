@@ -9,5 +9,5 @@ if [ "$APP_ENV" = "DEV" ]
 	then
 		python manage.py runserver 0.0.0.0:8000
 	else
-		gunicorn --bind 0.0.0.0:8000 gspotsyncer.wsgi:application
+		gunicorn --bind 0.0.0.0:8000 --timeout 120 gspotsyncer.wsgi:application
 fi
