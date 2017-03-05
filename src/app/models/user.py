@@ -48,7 +48,7 @@ class Profile(AppModel):
         try:
             self.user.youtubeprofile.refresh_external_playlists(refresh_tracks)
 
-        except SpotifyProfile.DoesNotExist:
+        except YoutubeProfile.DoesNotExist:
             pass
 
         return True

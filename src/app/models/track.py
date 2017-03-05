@@ -393,7 +393,7 @@ class Track(AppModel):
             'album' : self.album,
             'album_image' : self.album_image,
             'added_by' : self.added_by.username,
-            'processed' : str(self.processed),
+            'processed' : str(self.processed) if self.processed else None,
 
             # service specific
             'googletrack' : self.get_google_track().serialize() if self.get_google_track() else None,
